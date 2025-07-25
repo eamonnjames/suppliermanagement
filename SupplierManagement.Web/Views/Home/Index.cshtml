@@ -1,0 +1,355 @@
+@{
+    ViewData["Title"] = "Supplier Management System";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1>@ViewData["Title"]</h1>
+        <p class="lead">Test the Supplier Management APIs</p>
+    </div>
+</div>
+
+<!-- Authentication Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Authentication</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <input type="text" id="username" class="form-control" placeholder="Username" value="admin">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="password" id="password" class="form-control" placeholder="Password" value="password123">
+                    </div>
+                    <div class="col-md-3">
+                        <button id="loginBtn" class="btn btn-primary">Login</button>
+                    </div>
+                    <div class="col-md-3">
+                        <span id="authStatus" class="badge bg-secondary">Not Authenticated</span>
+                    </div>
+                </div>
+                <div id="authMessage" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Configuration -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>API Configuration</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="apiBaseUrl" class="form-label">API Base URL:</label>
+                        <input type="text" id="apiBaseUrl" class="form-control" value="http://localhost:5204">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="supplierIdFilter" class="form-label">Supplier ID Filter (optional):</label>
+                        <input type="number" id="supplierIdFilter" class="form-control" placeholder="Enter supplier ID">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Testing Buttons -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Get All Suppliers (Synchronous)</h5>
+            </div>
+            <div class="card-body">
+                <button id="getAllSuppliersBtn" class="btn btn-success" disabled>Load All Suppliers & Rates</button>
+                <div id="syncLoading" class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading synchronously...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Get Overlapping Rates (Asynchronous)</h5>
+            </div>
+            <div class="card-body">
+                <button id="getOverlappingRatesBtn" class="btn btn-warning" disabled>Load Overlapping Rates</button>
+                <div id="asyncLoading" class="loading">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading asynchronously...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Section -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>API Results</h5>
+            </div>
+            <div class="card-body">
+                <div id="results">
+                    <p class="text-muted">Results will appear here after API calls...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Global variables
+        let authToken = null;
+        let apiBaseUrl = 'http://localhost:5204'; // Default value, will be updated from input
+
+        // DOM elements
+        const loginBtn = document.getElementById('loginBtn');
+        const getAllSuppliersBtn = document.getElementById('getAllSuppliersBtn');
+        const getOverlappingRatesBtn = document.getElementById('getOverlappingRatesBtn');
+        const authStatus = document.getElementById('authStatus');
+        const authMessage = document.getElementById('authMessage');
+        const results = document.getElementById('results');
+        const apiBaseUrlInput = document.getElementById('apiBaseUrl');
+        const syncLoading = document.getElementById('syncLoading');
+        const asyncLoading = document.getElementById('asyncLoading');
+
+        // Update API base URL when changed
+        apiBaseUrlInput.addEventListener('change', function() {
+            apiBaseUrl = this.value;
+        });
+
+        // Login functionality
+        loginBtn.addEventListener('click', async function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('Please enter username and password', 'error');
+                return;
+            }
+
+            try {
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Logging in...';
+
+                const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    authStatus.textContent = 'Authenticated';
+                    authStatus.className = 'badge bg-success';
+                    showMessage('Login successful!', 'success');
+
+                    // Enable API buttons
+                    getAllSuppliersBtn.disabled = false;
+                    getOverlappingRatesBtn.disabled = false;
+                } else {
+                    const errorData = await response.json();
+                    showMessage(`Login failed: ${errorData.message || 'Invalid credentials'}`, 'error');
+                    authStatus.textContent = 'Authentication Failed';
+                    authStatus.className = 'badge bg-danger';
+                }
+            } catch (error) {
+                showMessage(`Login error: ${error.message}`, 'error');
+                authStatus.textContent = 'Connection Error';
+                authStatus.className = 'badge bg-danger';
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Login';
+            }
+        });
+
+        // Get All Suppliers (Synchronous)
+        getAllSuppliersBtn.addEventListener('click', function() {
+            loadAllSuppliersSync();
+        });
+
+        // Get Overlapping Rates (Asynchronous)
+        getOverlappingRatesBtn.addEventListener('click', function() {
+            loadOverlappingRatesAsync();
+        });
+
+        // Synchronous API call for all suppliers
+        function loadAllSuppliersSync() {
+            if (!authToken) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+
+            syncLoading.style.display = 'block';
+            getAllSuppliersBtn.disabled = true;
+
+            // Using XMLHttpRequest for synchronous call (not recommended in production)
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${apiBaseUrl}/api/suppliers/all-with-rates`, false); // false = synchronous
+            xhr.setRequestHeader('Authorization', `Bearer ${authToken}`);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    syncLoading.style.display = 'none';
+                    getAllSuppliersBtn.disabled = false;
+
+                    if (xhr.status === 200) {
+                        const data = JSON.parse(xhr.responseText);
+                        displaySuppliersResult(data, 'All Suppliers (Synchronous Call)');
+                        showMessage('Suppliers loaded successfully (synchronous)', 'success');
+                    } else {
+                        showMessage(`Error loading suppliers: ${xhr.status} - ${xhr.statusText}`, 'error');
+                    }
+                }
+            };
+
+            try {
+                xhr.send();
+            } catch (error) {
+                syncLoading.style.display = 'none';
+                getAllSuppliersBtn.disabled = false;
+                showMessage(`Synchronous request error: ${error.message}`, 'error');
+            }
+        }
+
+        // Asynchronous API call for overlapping rates
+        async function loadOverlappingRatesAsync() {
+            if (!authToken) {
+                showMessage('Please login first', 'error');
+                return;
+            }
+
+            asyncLoading.style.display = 'block';
+            getOverlappingRatesBtn.disabled = true;
+
+            try {
+                const supplierIdFilter = document.getElementById('supplierIdFilter').value;
+                let url = `${apiBaseUrl}/api/suppliers/overlapping-rates`;
+
+                if (supplierIdFilter) {
+                    url += `?supplierId=${supplierIdFilter}`;
+                }
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Overlapping rates data received:', data); // Debug logging
+                    displaySuppliersResult(data, `Overlapping Rates (Asynchronous Call)${supplierIdFilter ? ` - Supplier ${supplierIdFilter}` : ''}`);
+                    showMessage('Overlapping rates loaded successfully (asynchronous)', 'success');
+                } else {
+                    const errorData = await response.json();
+                    showMessage(`Error loading overlapping rates: ${errorData.message || response.statusText}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Asynchronous request error: ${error.message}`, 'error');
+            } finally {
+                asyncLoading.style.display = 'none';
+                getOverlappingRatesBtn.disabled = false;
+            }
+        }
+
+        // Display suppliers result
+        function displaySuppliersResult(suppliers, title) {
+            console.log('Displaying suppliers:', suppliers); // Debug logging
+            let html = `<h6>${title}</h6>`;
+
+            if (!suppliers || suppliers.length === 0) {
+                html += '<p class="text-muted">No suppliers found.</p>';
+            } else {
+                html += `<p><strong>Found ${suppliers.length} supplier(s)</strong></p>`;
+
+                suppliers.forEach(supplier => {
+                    // Handle both SupplierWithRatesDto and OverlappingRateDto structures
+                    const supplierId = supplier.supplierId;
+                    const supplierName = supplier.name || supplier.supplierName;
+                    const rates = supplier.rates || supplier.overlappingRates || [];
+                    const isOverlappingData = supplier.overlappingRates !== undefined;
+
+                    html += `
+                        <div class="supplier-card${isOverlappingData ? ' overlapping' : ''}">
+                            <h6>Supplier #${supplierId}: ${supplierName}</h6>
+                    `;
+
+                    // Only show address and created by for regular suppliers (not overlapping data)
+                    if (!isOverlappingData) {
+                        html += `
+                            <p><strong>Address:</strong> ${supplier.address || 'N/A'}</p>
+                            <p><strong>Created By:</strong> ${supplier.createdByUser} on ${new Date(supplier.createdOn).toLocaleDateString()}</p>
+                        `;
+                    }
+
+                    // Show overlap reason if available
+                    if (supplier.overlapReason) {
+                        html += `<p><strong>Overlap Reason:</strong> ${supplier.overlapReason}</p>`;
+                    }
+
+                    html += `<h6>${isOverlappingData ? 'Overlapping ' : ''}Rates (${rates.length}):</h6>`;
+
+                    if (rates && rates.length > 0) {
+                        rates.forEach(rate => {
+                            const endDate = rate.rateEndDate ? new Date(rate.rateEndDate).toLocaleDateString() : 'Ongoing';
+                            html += `
+                                <div class="rate-item${isOverlappingData ? ' overlapping' : ''}">
+                                    <strong>Rate:</strong> $${rate.rate.toFixed(2)} |
+                                    <strong>Period:</strong> ${new Date(rate.rateStartDate).toLocaleDateString()} - ${endDate} |
+                                    <strong>Created By:</strong> ${rate.createdByUser}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        html += '<p class="text-muted">No rates found for this supplier.</p>';
+                    }
+
+                    html += '</div>';
+                });
+            }
+
+            results.innerHTML = html;
+        }
+
+        // Show message helper
+        function showMessage(message, type) {
+            const className = type === 'error' ? 'error' : 'success';
+            authMessage.innerHTML = `<div class="${className}">${message}</div>`;
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                authMessage.innerHTML = '';
+            }, 5000);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize API base URL from input field
+            apiBaseUrl = apiBaseUrlInput.value;
+            showMessage('Please login to access the APIs', 'error');
+        });
+    </script>
+}

@@ -1,0 +1,57 @@
+@SupplierManagement.API_HostAddress = http://localhost:5204
+
+# Authentication - Login to get Bearer token
+POST {{SupplierManagement.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+###
+
+# Store the token from the login response above and use it in subsequent requests
+@authToken = YOUR_TOKEN_HERE
+
+# Exercise 2 API 1: Return all Suppliers and their rates
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers/all-with-rates
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Exercise 2 API 2: Check for overlapping suppliers and rates (all suppliers)
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers/overlapping-rates
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Exercise 2 API 2: Check for overlapping suppliers and rates (specific supplier - Supplier 3 should have overlaps)
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers/overlapping-rates?supplierId=3
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Exercise 2 API 2: Check for overlapping suppliers and rates (specific supplier - Supplier 4 should have overlaps)
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers/overlapping-rates?supplierId=4
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Exercise 2 API 2: Check for overlapping suppliers and rates (specific supplier - Supplier 1 should have NO overlaps)
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers/overlapping-rates?supplierId=1
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
+
+# Exercise 1 CRUD: Get all suppliers
+GET {{SupplierManagement.API_HostAddress}}/api/suppliers
+Accept: application/json
+Authorization: Bearer {{authToken}}
+
+###
