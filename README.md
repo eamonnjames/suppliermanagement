@@ -293,27 +293,54 @@ For enterprise-scale deployment, see `ARCHITECTURE.md` for detailed analysis inc
 
 ## 📋 Project Structure
 
+```text
 SupplierManagement/
-├── SupplierManagement.API/          # Web API project
-│   ├── Controllers/                 # API controllers
-│   ├── Properties/                  # Launch settings
-│   └── Program.cs                   # API configuration
-├── SupplierManagement.Core/         # Business logic
-│   ├── DTOs/                        # Data transfer objects
-│   ├── Entities/                    # Domain entities
-│   ├── Interfaces/                  # Service interfaces
-│   └── Services/                    # Business services
-├── SupplierManagement.Infrastructure/ # Data access
-│   ├── Data/                        # DbContext & seed data
-│   └── Repositories/                # Data repositories
-├── SupplierManagement.Web/          # Web application
-│   ├── Controllers/                 # MVC controllers
-│   ├── Views/                       # Razor views & JavaScript
-│   └── Program.cs                   # Web app configuration
-├── README.md                        # This file
-├── TESTING.md                       # Testing guidelines
-├── ARCHITECTURE.md                  # Scalability analysis
-└── SupplierManagement.sln          # Solution file
+├── SupplierManagement.API/
+├── SupplierManagement.Core/
+├── SupplierManagement.Infrastructure/
+├── SupplierManagement.Web/
+├── SupplierManagement.API.Tests/
+├── SupplierManagement.Web.Tests/
+└── Solution Files
+```
+
+### 📁 Project Details
+
+#### **SupplierManagement.API** - Web API Project
+
+- `Controllers/` - API controllers (Auth, Suppliers)
+- `Properties/` - Launch settings
+- `Program.cs` - API configuration & startup
+
+#### **SupplierManagement.Core** - Business Logic
+
+- `DTOs/` - Data transfer objects
+- `Entities/` - Domain entities (Supplier, SupplierRate)
+- `Interfaces/` - Service interfaces
+- `Services/` - Business services & logic
+
+#### **SupplierManagement.Infrastructure** - Data Access
+
+- `Data/` - DbContext & seed data
+- `Repositories/` - Data repositories
+
+#### **SupplierManagement.Web** - Web Application
+
+- `Controllers/` - MVC controllers
+- `Views/` - Razor views & JavaScript
+- `Program.cs` - Web app configuration
+
+#### **Test Projects**
+
+- `SupplierManagement.API.Tests/` - API unit & integration tests
+- `SupplierManagement.Web.Tests/` - Web application tests
+
+#### **Solution Files**
+
+- `README.md` - This documentation
+- `TESTING.md` - Testing guidelines
+- `ARCHITECTURE.md` - Scalability analysis
+- `SupplierManagement.sln` - Solution file
 
 ## ✨ Additional Features
 
